@@ -29,3 +29,23 @@ export function parseSearchQuery(
 
   return { ok: true, value: query };
 }
+
+/**
+ * Valida um identificador recebido na URL (ex.: /api/shows/169).
+ * Aceita apenas inteiros positivos escritos só com dígitos.
+ */
+export function parsePositiveId(
+  raw: string,
+  errorMessage: string,
+): ValidationResult<number> {
+  if (!/^[1-9]\d*$/.test(raw)) {
+    return { ok: false, error: errorMessage };
+  }
+
+  const id = Number(raw);
+  if (!Number.isSafeInteger(id)) {
+    return { ok: false, error: errorMessage };
+  }
+
+  return { ok: true, value: id };
+}

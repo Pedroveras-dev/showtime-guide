@@ -4,7 +4,9 @@
 import "server-only";
 
 import { ExternalApiError } from "@/lib/http";
-import type { ShowSummary } from "@/lib/types";
+import { groupEpisodesBySeason, type EpisodeWithSeason } from "@/lib/seasons";
+import { stripHtml } from "@/lib/text";
+import type { ShowDetail, ShowSummary } from "@/lib/types";
 
 const TVMAZE_BASE_URL = "https://api.tvmaze.com";
 
@@ -17,9 +19,13 @@ const REQUEST_TIMEOUT_MS = 10_000;
 
 /**
  * Faz um GET na TVmaze e devolve o JSON da resposta.
- * Qualquer falha de comunicação vira ExternalApiError (resposta 502).
+ * Com `notFoundAsNull`, um 404 da TVmaze devolve null (recurso inexistente).
+ * Qualquer outra falha de comunicação vira ExternalApiError (resposta 502).
  */
-async function getJson(path: string): Promise<unknown> {
+async function getJson(
+  path: string,
+  options: { notFoundAsNull?: boolean } = {},
+): Promise<unknown> {
   let response: Response;
 
   try {
@@ -30,6 +36,10 @@ async function getJson(path: string): Promise<unknown> {
     });
   } catch (error) {
     throw new ExternalApiError(`Falha de rede em ${path}: ${String(error)}`);
+  }
+
+  if (response.status === 404 && options.notFoundAsNull) {
+    return null;
   }
 
   if (!response.ok) {
@@ -65,6 +75,23 @@ function toImageUrl(image: unknown): string | null {
   return toStringOrNull(image.medium) ?? toStringOrNull(image.original);
 }
 
+function toNumberOrNull(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+/** Nome da emissora (network) ou, se não houver, do serviço de streaming. */
+function toNetworkName(network: unknown, webChannel: unknown): string | null {
+  for (const channel of [network, webChannel]) {
+    if (isRecord(channel)) {
+      const name = toStringOrNull(channel.name);
+      if (name !== null) {
+        return name;
+      }
+    }
+  }
+  return null;
+}
+
 function toStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
@@ -84,6 +111,29 @@ function toShowSummary(raw: unknown): ShowSummary | null {
     image_url: toImageUrl(raw.image),
     genres: toStringArray(raw.genres),
     premiered: toStringOrNull(raw.premiered),
+  };
+}
+
+/**
+ * Converte um episódio da TVmaze. Episódios sem id ou sem número de
+ * temporada são descartados (devolve null).
+ */
+function toEpisode(raw: unknown): EpisodeWithSeason | null {
+  if (!isRecord(raw) || typeof raw.id !== "number" || typeof raw.season !== "number") {
+    return null;
+  }
+
+  const runtime = toNumberOrNull(raw.runtime);
+
+  return {
+    id: raw.id,
+    season: raw.season,
+    number: toNumberOrNull(raw.number),
+    name: toStringOrNull(raw.name) ?? "Episódio sem título",
+    airdate: toStringOrNull(raw.airdate),
+    // Duração zero ou negativa é tratada como desconhecida.
+    runtime_minutes: runtime !== null && runtime > 0 ? runtime : null,
+    summary: stripHtml(toStringOrNull(raw.summary)),
   };
 }
 
@@ -112,4 +162,46 @@ export async function searchShows(query: string): Promise<ShowSummary[]> {
     }
   }
   return shows;
+}
+
+/**
+ * Busca uma série com todos os episódios, já agrupados por temporada.
+ * Endpoint externo: GET /shows/:id?embed=episodes
+ * Episódios especiais não vêm por padrão nesse endpoint da TVmaze.
+ * Devolve null quando a série não existe na TVmaze (404).
+ */
+export async function getShowDetail(id: number): Promise<ShowDetail | null> {
+  const data = await getJson(`/shows/${id}?embed=episodes`, { notFoundAsNull: true });
+
+  if (data === null) {
+    return null;
+  }
+
+  const show = toShowSummary(data);
+  if (!isRecord(data) || show === null) {
+    throw new ExternalApiError(`Formato inesperado no detalhe da série ${id}`);
+  }
+
+  const embedded = isRecord(data._embedded) ? data._embedded : {};
+  const rawEpisodes = Array.isArray(embedded.episodes) ? embedded.episodes : [];
+
+  const episodes: EpisodeWithSeason[] = [];
+  for (const rawEpisode of rawEpisodes) {
+    const episode = toEpisode(rawEpisode);
+    if (episode !== null) {
+      episodes.push(episode);
+    }
+  }
+
+  return {
+    ...show,
+    ended: toStringOrNull(data.ended),
+    status: toStringOrNull(data.status),
+    language: toStringOrNull(data.language),
+    network: toNetworkName(data.network, data.webChannel),
+    rating: isRecord(data.rating) ? toNumberOrNull(data.rating.average) : null,
+    summary: stripHtml(toStringOrNull(data.summary)),
+    tvmaze_url: toStringOrNull(data.url),
+    seasons: groupEpisodesBySeason(episodes),
+  };
 }
