@@ -20,7 +20,7 @@ usando dados da [TVmaze](https://www.tvmaze.com/api).
 
 ## Versão do Node.js
 
-Desenvolvido e testado com Node.js 26.13.0 e npm 11.20.0 (mínimo: Node.js 22).
+Desenvolvido e testado com Node.js 26.13.0 e npm 11.20.0 (mínimo: Node.js 22.18, que executa TypeScript diretamente nos testes).
 
 ## Como executar
 
@@ -39,3 +39,4 @@ Depois, acesse <http://localhost:3000>.
 | `npm run start`     | Executa o build de produção               |
 | `npm run lint`      | Verifica o código com o ESLint            |
 | `npm run typecheck` | Verifica os tipos com o compilador do TypeScript |
+| `npm test`          | Executa os testes automatizados (pasta `tests/`) |
