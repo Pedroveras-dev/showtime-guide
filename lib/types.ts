@@ -69,3 +69,8 @@ export type ShowDetail = ShowSummary & {
   tvmaze_url: string | null;
   seasons: Season[];
 };
+
+/** Situações possíveis de uma série na lista pessoal (watchlist). */
+export const WATCH_STATUSES = ["want_to_watch", "watching", "finished"] as const;
+
+export type WatchStatus = (typeof WATCH_STATUSES)[number];
