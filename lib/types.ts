@@ -37,6 +37,25 @@ export type Season = {
   episodes: Episode[];
 };
 
+/** Um episódio exibido na programação de um país em uma data. */
+export type ScheduleItem = {
+  id: number; // id do episódio na TVmaze
+  airtime: string | null; // horário local de exibição (HH:MM)
+  season: number | null;
+  number: number | null;
+  episode_name: string;
+  runtime_minutes: number | null;
+  summary: string | null;
+  show: ShowSummary & { network: string | null };
+};
+
+/** Resposta de GET /api/schedule: informa a data e o país efetivamente usados. */
+export type Schedule = {
+  date: string;
+  country: string;
+  items: ScheduleItem[];
+};
+
 /** Detalhe de uma série (GET /api/shows/[id]). */
 export type ShowDetail = ShowSummary & {
   ended: string | null;

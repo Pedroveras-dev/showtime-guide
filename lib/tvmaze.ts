@@ -6,7 +6,7 @@ import "server-only";
 import { ExternalApiError } from "@/lib/http";
 import { groupEpisodesBySeason, type EpisodeWithSeason } from "@/lib/seasons";
 import { stripHtml } from "@/lib/text";
-import type { ShowDetail, ShowSummary } from "@/lib/types";
+import type { Schedule, ScheduleItem, ShowDetail, ShowSummary } from "@/lib/types";
 
 const TVMAZE_BASE_URL = "https://api.tvmaze.com";
 
@@ -19,12 +19,13 @@ const REQUEST_TIMEOUT_MS = 10_000;
 
 /**
  * Faz um GET na TVmaze e devolve o JSON da resposta.
- * Com `notFoundAsNull`, um 404 da TVmaze devolve null (recurso inexistente).
+ * Com `nullOnStatus`, esse status da TVmaze devolve null em vez de erro
+ * (ex.: 404 = série inexistente; 422 = país rejeitado pela TVmaze).
  * Qualquer outra falha de comunicação vira ExternalApiError (resposta 502).
  */
 async function getJson(
   path: string,
-  options: { notFoundAsNull?: boolean } = {},
+  options: { nullOnStatus?: number } = {},
 ): Promise<unknown> {
   let response: Response;
 
@@ -38,7 +39,7 @@ async function getJson(
     throw new ExternalApiError(`Falha de rede em ${path}: ${String(error)}`);
   }
 
-  if (response.status === 404 && options.notFoundAsNull) {
+  if (response.status === options.nullOnStatus) {
     return null;
   }
 
@@ -171,7 +172,7 @@ export async function searchShows(query: string): Promise<ShowSummary[]> {
  * Devolve null quando a série não existe na TVmaze (404).
  */
 export async function getShowDetail(id: number): Promise<ShowDetail | null> {
-  const data = await getJson(`/shows/${id}?embed=episodes`, { notFoundAsNull: true });
+  const data = await getJson(`/shows/${id}?embed=episodes`, { nullOnStatus: 404 });
 
   if (data === null) {
     return null;
@@ -204,4 +205,61 @@ export async function getShowDetail(id: number): Promise<ShowDetail | null> {
     tvmaze_url: toStringOrNull(data.url),
     seasons: groupEpisodesBySeason(episodes),
   };
+}
+
+/** Converte um item da programação (episódio com a série embutida). */
+function toScheduleItem(raw: unknown): ScheduleItem | null {
+  if (!isRecord(raw) || typeof raw.id !== "number" || !isRecord(raw.show)) {
+    return null;
+  }
+
+  const show = toShowSummary(raw.show);
+  if (show === null) {
+    return null;
+  }
+
+  const runtime = toNumberOrNull(raw.runtime);
+
+  return {
+    id: raw.id,
+    airtime: toStringOrNull(raw.airtime),
+    season: toNumberOrNull(raw.season),
+    number: toNumberOrNull(raw.number),
+    episode_name: toStringOrNull(raw.name) ?? "Episódio sem título",
+    runtime_minutes: runtime !== null && runtime > 0 ? runtime : null,
+    summary: stripHtml(toStringOrNull(raw.summary)),
+    show: {
+      ...show,
+      network: toNetworkName(raw.show.network, raw.show.webChannel),
+    },
+  };
+}
+
+/**
+ * Programação de TV de um país em uma data.
+ * Endpoint externo: GET /schedule?country=:country&date=:date
+ * A data e o país já chegam validados pela rota. Devolve null quando a
+ * TVmaze rejeita o país (422 = código ISO inexistente, ex.: "XX").
+ */
+export async function getSchedule(date: string, country: string): Promise<Schedule | null> {
+  const params = new URLSearchParams({ country, date });
+  const data = await getJson(`/schedule?${params.toString()}`, { nullOnStatus: 422 });
+
+  if (data === null) {
+    return null;
+  }
+
+  if (!Array.isArray(data)) {
+    throw new ExternalApiError("Formato inesperado na programação");
+  }
+
+  const items: ScheduleItem[] = [];
+  for (const rawItem of data) {
+    const item = toScheduleItem(rawItem);
+    if (item !== null) {
+      items.push(item);
+    }
+  }
+
+  return { date, country, items };
 }
