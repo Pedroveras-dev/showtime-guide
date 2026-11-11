@@ -74,3 +74,14 @@ export type ShowDetail = ShowSummary & {
 export const WATCH_STATUSES = ["want_to_watch", "watching", "finished"] as const;
 
 export type WatchStatus = (typeof WATCH_STATUSES)[number];
+
+/** Um registro da lista pessoal (tabela watchlist do SQLite). */
+export type WatchlistItem = {
+  id: number; // id local, gerado pelo SQLite
+  show_id: number; // id da série na TVmaze
+  name: string;
+  image_url: string | null;
+  status: WatchStatus;
+  note: string | null;
+  created_at: string; // data e hora de inclusão (ISO 8601, UTC)
+};

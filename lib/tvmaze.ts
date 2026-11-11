@@ -166,6 +166,25 @@ export async function searchShows(query: string): Promise<ShowSummary[]> {
 }
 
 /**
+ * Dados resumidos de uma série (nome, imagem...), sem os episódios.
+ * Endpoint externo: GET /shows/:id
+ * Usado ao incluir uma série na lista pessoal. Devolve null se ela não existir (404).
+ */
+export async function getShowSummary(id: number): Promise<ShowSummary | null> {
+  const data = await getJson(`/shows/${id}`, { nullOnStatus: 404 });
+
+  if (data === null) {
+    return null;
+  }
+
+  const show = toShowSummary(data);
+  if (show === null) {
+    throw new ExternalApiError(`Formato inesperado na série ${id}`);
+  }
+  return show;
+}
+
+/**
  * Busca uma série com todos os episódios, já agrupados por temporada.
  * Endpoint externo: GET /shows/:id?embed=episodes
  * Episódios especiais não vêm por padrão nesse endpoint da TVmaze.

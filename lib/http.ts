@@ -1,4 +1,5 @@
 import type { ApiError } from "@/lib/types";
+import type { ValidationResult } from "@/lib/validation";
 
 /**
  * Erro lançado quando a comunicação com a API externa (TVmaze) falha:
@@ -34,4 +35,19 @@ export function errorToResponse(error: unknown): Response {
 
   console.error("[Erro interno]", error);
   return jsonError("Ocorreu um erro interno no servidor.", 500);
+}
+
+/**
+ * Lê o corpo JSON da requisição. Devolve { ok: false } se o corpo estiver
+ * vazio ou não for um JSON válido (o endpoint responde 400).
+ */
+export async function readJsonBody(
+  request: Request,
+): Promise<ValidationResult<unknown>> {
+  try {
+    const value: unknown = await request.json();
+    return { ok: true, value };
+  } catch {
+    return { ok: false, error: "O corpo da requisição deve ser um JSON válido." };
+  }
 }

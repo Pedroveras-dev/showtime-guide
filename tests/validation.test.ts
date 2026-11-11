@@ -3,9 +3,11 @@ import { describe, test } from "node:test";
 
 import {
   parseCountryCode,
+  parseCreateWatchlistBody,
   parsePositiveId,
   parseScheduleDate,
   parseSearchQuery,
+  parseUpdateWatchlistBody,
 } from "../lib/validation.ts";
 
 describe("parseSearchQuery", () => {
@@ -83,6 +85,66 @@ describe("parseCountryCode", () => {
   test("rejeita códigos fora do formato", () => {
     for (const raw of ["B", "BRA", "B1", "12", "Brasil"]) {
       assert.equal(parseCountryCode(raw).ok, false, raw);
+    }
+  });
+});
+
+describe("parseCreateWatchlistBody", () => {
+  test("usa want_to_watch e anotação vazia como padrão", () => {
+    assert.deepEqual(parseCreateWatchlistBody({ show_id: 169 }), {
+      ok: true,
+      value: { show_id: 169, status: "want_to_watch", note: null },
+    });
+  });
+
+  test("aceita status e anotação, removendo espaços das pontas", () => {
+    assert.deepEqual(parseCreateWatchlistBody({ show_id: 1, status: "watching", note: "  oi  " }), {
+      ok: true,
+      value: { show_id: 1, status: "watching", note: "oi" },
+    });
+  });
+
+  test("rejeita corpo que não é objeto e show_id ausente ou inválido", () => {
+    for (const body of [null, [], "169", {}, { show_id: "169" }, { show_id: 0 }, { show_id: 1.5 }]) {
+      assert.equal(parseCreateWatchlistBody(body).ok, false, JSON.stringify(body));
+    }
+  });
+
+  test("rejeita name e image_url, que vêm da TVmaze", () => {
+    assert.equal(parseCreateWatchlistBody({ show_id: 1, name: "X" }).ok, false);
+    assert.equal(parseCreateWatchlistBody({ show_id: 1, image_url: "x" }).ok, false);
+  });
+});
+
+describe("parseUpdateWatchlistBody", () => {
+  test("altera só os campos enviados", () => {
+    assert.deepEqual(parseUpdateWatchlistBody({ status: "finished" }), {
+      ok: true,
+      value: { status: "finished" },
+    });
+    assert.deepEqual(parseUpdateWatchlistBody({ note: "texto" }), { ok: true, value: { note: "texto" } });
+  });
+
+  test("note null, vazia ou só com espaços apaga a anotação", () => {
+    for (const note of [null, "", "   "]) {
+      assert.deepEqual(parseUpdateWatchlistBody({ note }), { ok: true, value: { note: null } });
+    }
+  });
+
+  test("aceita anotação com 500 caracteres e rejeita 501", () => {
+    assert.equal(parseUpdateWatchlistBody({ note: "a".repeat(500) }).ok, true);
+    assert.equal(parseUpdateWatchlistBody({ note: "a".repeat(501) }).ok, false);
+  });
+
+  test("rejeita campos que não sejam status e note", () => {
+    for (const body of [{ id: 1 }, { show_id: 1 }, { name: "X" }, { created_at: "x" }, { status: "watching", image_url: "x" }]) {
+      assert.equal(parseUpdateWatchlistBody(body).ok, false, JSON.stringify(body));
+    }
+  });
+
+  test("rejeita corpo vazio, status inválido e anotação que não é texto", () => {
+    for (const body of [{}, { status: null }, { status: "dropped" }, { note: 5 }, []]) {
+      assert.equal(parseUpdateWatchlistBody(body).ok, false, JSON.stringify(body));
     }
   });
 });

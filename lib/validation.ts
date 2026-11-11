@@ -1,5 +1,8 @@
 // Funções de validação das entradas recebidas pelos endpoints.
 // Cada função devolve o valor já tratado ou uma mensagem de erro em português.
+// Caminho relativo com extensão (e não "@/lib/types"): este arquivo também é
+// importado diretamente pelo Node nos testes, que não conhece o atalho "@/".
+import { WATCH_STATUSES, type WatchStatus } from "./types.ts";
 
 export type ValidationResult<T> =
   | { ok: true; value: T }
@@ -131,4 +134,154 @@ export function parsePositiveId(
   }
 
   return { ok: true, value: id };
+}
+
+// ---------------------------------------------------------------------------
+// Lista pessoal (watchlist): corpo JSON de POST e PATCH
+// ---------------------------------------------------------------------------
+
+export const MAX_NOTE_LENGTH = 500;
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isWatchStatus(value: unknown): value is WatchStatus {
+  return WATCH_STATUSES.some((status) => status === value);
+}
+
+/** Rejeita campos fora da lista permitida. */
+function checkAllowedFields(body: Record<string, unknown>, allowed: readonly string[]): string | null {
+  const extra = Object.keys(body).filter((key) => !allowed.includes(key));
+  if (extra.length === 0) {
+    return null;
+  }
+  const list = allowed.map((key) => `'${key}'`).join(", ");
+  return `Campo(s) não permitido(s): ${extra.join(", ")}. Envie apenas: ${list}.`;
+}
+
+function parseStatus(value: unknown): ValidationResult<WatchStatus> {
+  if (!isWatchStatus(value)) {
+    return {
+      ok: false,
+      error: "Status inválido. Use 'want_to_watch', 'watching' ou 'finished'.",
+    };
+  }
+  return { ok: true, value };
+}
+
+/**
+ * Valida a anotação. null, texto vazio ou só com espaços = sem anotação (null).
+ * O limite de 500 caracteres vale para o texto sem os espaços das pontas.
+ */
+function parseNote(value: unknown): ValidationResult<string | null> {
+  if (value === null) {
+    return { ok: true, value: null };
+  }
+  if (typeof value !== "string") {
+    return { ok: false, error: "A anotação deve ser um texto (ou null para apagá-la)." };
+  }
+
+  const note = value.trim();
+  if (note.length > MAX_NOTE_LENGTH) {
+    return {
+      ok: false,
+      error: `A anotação deve ter no máximo ${MAX_NOTE_LENGTH} caracteres.`,
+    };
+  }
+  return { ok: true, value: note === "" ? null : note };
+}
+
+export type CreateWatchlistInput = {
+  show_id: number;
+  status: WatchStatus;
+  note: string | null;
+};
+
+/**
+ * Valida o corpo do POST /api/watchlist: { show_id, status?, note? }.
+ * name e image_url NÃO são aceitos: o backend os busca na TVmaze.
+ */
+export function parseCreateWatchlistBody(body: unknown): ValidationResult<CreateWatchlistInput> {
+  if (!isPlainObject(body)) {
+    return { ok: false, error: "O corpo da requisição deve ser um objeto JSON." };
+  }
+
+  const fieldsError = checkAllowedFields(body, ["show_id", "status", "note"]);
+  if (fieldsError !== null) {
+    return { ok: false, error: fieldsError };
+  }
+
+  if (!("show_id" in body)) {
+    return { ok: false, error: "Informe o campo 'show_id' (id da série na TVmaze)." };
+  }
+  const showId = body.show_id;
+  if (typeof showId !== "number" || !Number.isSafeInteger(showId) || showId <= 0) {
+    return { ok: false, error: "O campo 'show_id' deve ser um número inteiro positivo." };
+  }
+
+  let status: WatchStatus = "want_to_watch";
+  if ("status" in body) {
+    const parsed = parseStatus(body.status);
+    if (!parsed.ok) {
+      return parsed;
+    }
+    status = parsed.value;
+  }
+
+  let note: string | null = null;
+  if ("note" in body) {
+    const parsed = parseNote(body.note);
+    if (!parsed.ok) {
+      return parsed;
+    }
+    note = parsed.value;
+  }
+
+  return { ok: true, value: { show_id: showId, status, note } };
+}
+
+export type UpdateWatchlistInput = {
+  status?: WatchStatus;
+  note?: string | null;
+};
+
+/**
+ * Valida o corpo do PATCH /api/watchlist/[id]. Só 'status' e 'note' podem
+ * ser alterados; os dois são opcionais, mas pelo menos um é obrigatório.
+ * Campo ausente = manter o valor atual; "note": null ou "" = apagar a anotação.
+ */
+export function parseUpdateWatchlistBody(body: unknown): ValidationResult<UpdateWatchlistInput> {
+  if (!isPlainObject(body)) {
+    return { ok: false, error: "O corpo da requisição deve ser um objeto JSON." };
+  }
+
+  const fieldsError = checkAllowedFields(body, ["status", "note"]);
+  if (fieldsError !== null) {
+    return { ok: false, error: fieldsError };
+  }
+
+  const changes: UpdateWatchlistInput = {};
+
+  if ("status" in body) {
+    const parsed = parseStatus(body.status);
+    if (!parsed.ok) {
+      return parsed;
+    }
+    changes.status = parsed.value;
+  }
+
+  if ("note" in body) {
+    const parsed = parseNote(body.note);
+    if (!parsed.ok) {
+      return parsed;
+    }
+    changes.note = parsed.value;
+  }
+
+  if (Object.keys(changes).length === 0) {
+    return { ok: false, error: "Informe ao menos um campo para alterar: 'status' ou 'note'." };
+  }
+
+  return { ok: true, value: changes };
 }
