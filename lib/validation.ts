@@ -19,7 +19,7 @@ export function parseSearchQuery(
   if (query === "") {
     return {
       ok: false,
-      error: "Informe o nome da série no parâmetro 'q'.",
+      error: "Informe o nome da série que deseja buscar.",
     };
   }
 
