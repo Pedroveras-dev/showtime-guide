@@ -488,3 +488,108 @@ button:disabled {
   color: var(--color-muted);
   font-size: 0.875rem;
 }
+
+/* ------------------------------------------------------------------ */
+/* Página da lista pessoal                                             */
+/* ------------------------------------------------------------------ */
+.list-count {
+  color: var(--color-muted);
+}
+
+.watchlist {
+  display: grid;
+  gap: var(--space);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.watch-card {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.watch-card__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 210 / 295;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.watch-card__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.watch-card__title {
+  margin: 0;
+  font-size: 1.15rem;
+  overflow-wrap: anywhere;
+}
+
+.watch-card__meta {
+  margin: -0.5rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.note-form {
+  width: 100%;
+}
+
+.note-form textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.note-form__hint {
+  margin: 0.25rem 0 0.5rem;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.button--secondary {
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.button--secondary:hover {
+  background: var(--color-background);
+}
+
+.button--danger {
+  border-color: #b91c1c;
+  background: var(--color-surface);
+  color: #b91c1c;
+}
+
+.button--danger:hover {
+  background: #fef2f2;
+}
+
+/* Em telas estreitas, o pôster fica pequeno e acima do conteúdo. */
+@media (max-width: 480px) {
+  .watch-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .watch-card__image {
+    max-width: 120px;
+  }
+}

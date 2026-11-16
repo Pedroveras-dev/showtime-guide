@@ -50,3 +50,16 @@ export function formatCountry(code: string): string {
     return code;
   }
 }
+
+/**
+ * Data de um instante gravado em UTC (ex.: created_at), mostrada no fuso do
+ * Brasil. Fuso fixo: servidor e navegador produzem o mesmo texto.
+ * "2026-11-11T02:30:00.000Z" → "10/11/2026".
+ */
+export function formatTimestampDate(isoTimestamp: string): string {
+  const date = new Date(isoTimestamp);
+  if (Number.isNaN(date.getTime())) {
+    return isoTimestamp;
+  }
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(date);
+}

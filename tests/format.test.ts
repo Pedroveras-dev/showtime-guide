@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { formatCountry, formatDate, formatMinutes, formatShowStatus } from "../lib/format.ts";
+import {
+  formatCountry,
+  formatDate,
+  formatMinutes,
+  formatShowStatus,
+  formatTimestampDate,
+} from "../lib/format.ts";
 
 test("formatMinutes mostra sempre a unidade e converte para horas a partir de 60", () => {
   assert.equal(formatMinutes(45), "45 min");
@@ -27,4 +33,10 @@ test("formatCountry mostra o nome do país em português", () => {
   assert.equal(formatCountry("BR"), "Brasil");
   assert.equal(formatCountry("US"), "Estados Unidos");
   assert.equal(formatCountry("BRA"), "BRA"); // código inválido aparece como veio
+});
+
+test("formatTimestampDate mostra a data de inclusão no fuso de São Paulo", () => {
+  // 02:30 UTC de 11/11 ainda é 23:30 de 10/11 em São Paulo.
+  assert.equal(formatTimestampDate("2026-11-11T02:30:00.000Z"), "10/11/2026");
+  assert.equal(formatTimestampDate("2026-11-11T15:00:00.000Z"), "11/11/2026");
 });
