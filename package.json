@@ -11,7 +11,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --conditions=react-server --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.ts\""
+    "test": "node --conditions=react-server --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.ts\"",
+    "check:api": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test scripts/check-api.ts"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
