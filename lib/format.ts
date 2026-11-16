@@ -41,3 +41,12 @@ export const WATCH_STATUS_LABELS = {
   watching: "Assistindo",
   finished: "Concluída",
 } satisfies Record<WatchStatus, string>;
+
+/** Nome do país em português a partir do código ISO ("BR" → "Brasil"). */
+export function formatCountry(code: string): string {
+  try {
+    return new Intl.DisplayNames(["pt-BR"], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}

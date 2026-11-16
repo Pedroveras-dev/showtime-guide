@@ -429,3 +429,62 @@ button:disabled {
 .episode__summary {
   margin: 0.5rem 0 0;
 }
+
+/* ------------------------------------------------------------------ */
+/* Página da programação                                               */
+/* ------------------------------------------------------------------ */
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.schedule-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.schedule-item {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.schedule-item p,
+.schedule-item h3 {
+  margin: 0;
+}
+
+.schedule-item__time {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.schedule-item__show {
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.schedule-item__episode {
+  overflow-wrap: anywhere;
+}
+
+.schedule-item__meta {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}

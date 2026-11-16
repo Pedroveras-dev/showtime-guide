@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { formatDate, formatMinutes, formatShowStatus } from "../lib/format.ts";
+import { formatCountry, formatDate, formatMinutes, formatShowStatus } from "../lib/format.ts";
 
 test("formatMinutes mostra sempre a unidade e converte para horas a partir de 60", () => {
   assert.equal(formatMinutes(45), "45 min");
@@ -21,4 +21,10 @@ test("formatShowStatus traduz as situações conhecidas", () => {
   assert.equal(formatShowStatus("Running"), "Em exibição");
   assert.equal(formatShowStatus("Outro valor"), "Outro valor");
   assert.equal(formatShowStatus(null), null);
+});
+
+test("formatCountry mostra o nome do país em português", () => {
+  assert.equal(formatCountry("BR"), "Brasil");
+  assert.equal(formatCountry("US"), "Estados Unidos");
+  assert.equal(formatCountry("BRA"), "BRA"); // código inválido aparece como veio
 });
