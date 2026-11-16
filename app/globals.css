@@ -1,5 +1,7 @@
 /* Variáveis de cor e espaçamento usadas em toda a aplicação.
-   As cores foram escolhidas com contraste mínimo de 4.5:1 sobre o fundo. */
+   Textos têm contraste mínimo de 4.5:1 sobre o fundo; o contorno de foco
+   tem pelo menos 3:1 (WCAG 2.1, critério 1.4.11): 5.0:1 sobre o branco e
+   4.7:1 sobre o fundo da página. */
 :root {
   --color-background: #f7f7f9;
   --color-surface: #ffffff;
@@ -7,7 +9,7 @@
   --color-muted: #4a4a55;
   --color-primary: #1d4ed8;
   --color-border: #d4d4dc;
-  --color-focus: #f59e0b;
+  --color-focus: #b45309;
   --radius: 8px;
   --space: 1rem;
   --max-width: 1100px;
