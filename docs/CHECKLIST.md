@@ -31,7 +31,7 @@ nas larguras de 1024, 375 e 320 pixels.
 | Executar só com `npm install` e `npm run dev` | `package.json`, `.npmrc` | ✅ clone novo do repositório: `npm install` sem erros e sem alterar arquivos versionados; `npm run dev` respondendo `200`. ⏳ Testado apenas em Linux com Node.js 26.13.0 e npm 11.20.0 (ver “Não verificado”) |
 | Sem erros de compilação do TypeScript | todo o código em TypeScript estrito | ✅ `npm run typecheck` e `npm run build`, também dentro do clone novo |
 | Evitar `any` | — | ✅ busca no código: nenhum `any` |
-| Banco criado automaticamente com 3 a 10 registros iniciais | `lib/db.ts` (`migrate`, `SEED_ITEMS`) | ✅ clone novo: no primeiro acesso, `data/app.db` criado com 6 registros. ✅ `npm test` (`tests/db.test.ts`) |
+| Banco criado automaticamente com 3 a 10 registros iniciais, na primeira execução | `instrumentation.ts` (abre o banco quando o servidor inicia); `lib/db.ts` (`migrate`, `SEED_ITEMS`) | ✅ cópia limpa, **sem nenhuma requisição**: `npm run dev` criou `data/app.db` com 6 registros cerca de 4,7 s após a mensagem “Ready” (medido duas vezes); `npm start` criou ao iniciar; `npm run build` não cria o banco. ✅ 10 requisições simultâneas durante a criação: todas `200`, 6 registros, sem erros. ✅ Falha simulada (`data` como arquivo): o servidor continua no ar, a lista responde `500` e volta a funcionar quando o problema é removido. ✅ `npm test` (`tests/db.test.ts`) |
 | Registros só na criação, sem duplicar ao reiniciar ou recarregar | `PRAGMA user_version` em `lib/db.ts`; conexão guardada em `globalThis` | ✅ clone novo: após reiniciar o servidor, continuam 6 registros. ✅ `npm test`: reinício, recarga e lista esvaziada (não reinsere) |
 | Registros com ids existentes na TVmaze e valores variados | `SEED_ITEMS` | ✅ ids, nomes e imagens conferidos em `GET https://api.tvmaze.com/shows/:id`; três situações, anotações preenchidas e vazias, uma série sem imagem |
 | Modo WAL desativado (journal `DELETE`) | `db.pragma("journal_mode = DELETE")` em `lib/db.ts` | ✅ clone novo: `journal_mode` = `delete` e só `app.db` na pasta. ✅ `npm test` |
@@ -62,7 +62,7 @@ nas larguras de 1024, 375 e 320 pixels.
 | Erros em JSON no formato `{ "error": "..." }` | `jsonError` (`lib/http.ts`) | ✅ `npm run check:api` confere o formato em todos os erros. ⚠️ Métodos não implementados (ex.: `PUT`) recebem `405` do próprio Next.js, sem corpo |
 | SQL parametrizado | `lib/watchlist.ts`, `lib/db.ts` | ✅ busca no código: valores sempre por parâmetros (`@nome`); a única interpolação é `PRAGMA user_version = ${SCHEMA_VERSION}`, uma constante interna (PRAGMA não aceita parâmetros) |
 | Cabeçalho de identificação para a API externa | `User-Agent` em `lib/tvmaze.ts` | ✅ revisão do código; a TVmaze recomenda, mas não exige |
-| Converter os dados da TVmaze para um formato próprio | funções `to...` em `lib/tvmaze.ts` | ✅ `npm run check:api` confere os campos da busca |
+| Converter os dados da TVmaze para um formato próprio, só com os campos necessários | funções `to...` em `lib/tvmaze.ts` | ✅ `npm run check:api` confere os campos exatos da busca e dos itens da programação (campos não exibidos foram removidos no commit `a2b03d6`) |
 | Não substituir a API por dados simulados | — | ✅ todas as consultas são feitas em tempo de execução; o banco guarda só a lista pessoal, com nome e imagem para a listagem resumida |
 
 ## Frontend

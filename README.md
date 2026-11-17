@@ -54,9 +54,10 @@ npm run dev
 
 Depois, acesse <http://localhost:3000>.
 
-Na primeira vez que a aplicação acessa o banco (por exemplo, ao abrir **Minha lista** ou a página
-de uma série), a pasta `data/`, o arquivo `data/app.db`, a tabela e os registros iniciais são
-criados automaticamente. Nenhum passo manual é necessário.
+Na primeira execução, a pasta `data/`, o arquivo `data/app.db`, a tabela e os registros iniciais
+são criados automaticamente quando o servidor inicia (`instrumentation.ts`), sem que seja preciso
+abrir alguma página. Com `npm run dev`, isso acontece poucos segundos depois da mensagem “Ready”,
+enquanto o Next.js compila os arquivos. Nenhum passo manual é necessário.
 
 > O arquivo `.npmrc` contém `ignore-scripts=true`. O better-sqlite3 já traz binários prontos para
 > Linux, Windows e macOS; sem essa opção, o npm tentaria compilá-lo do zero, o que exige um
@@ -278,8 +279,12 @@ Os exemplos de resposta abaixo foram copiados de respostas reais da aplicação,
 
 ## Banco de dados
 
-- Arquivo: **`data/app.db`** (SQLite), criado automaticamente junto com a pasta `data/` no
-  primeiro acesso ao banco. O arquivo está no `.gitignore` e não faz parte do repositório.
+- Arquivo: **`data/app.db`** (SQLite), criado automaticamente junto com a pasta `data/` quando o
+  servidor inicia, caso ainda não exista. O arquivo está no `.gitignore` e não faz parte do
+  repositório.
+- Se o banco não puder ser criado na inicialização, o erro é registrado no terminal e o servidor
+  continua funcionando (busca e programação); os endpoints da lista respondem `500` e tentam abrir
+  o banco de novo a cada requisição.
 - Modo de journal: o padrão do SQLite (`DELETE`). O modo WAL **não** é usado, então o banco é um
   único arquivo, sem `*.db-wal` nem `*.db-shm`.
 - Acesso: somente pelo backend (`lib/db.ts` abre a conexão; `lib/watchlist.ts` contém todas as
@@ -369,6 +374,7 @@ app/
   watchlist/              lista pessoal (page, loading)
   layout.tsx, globals.css layout comum (cabeçalho, rodapé) e estilos
 components/               componentes React reutilizáveis (recebem dados por props)
+instrumentation.ts        cria/abre o banco quando o servidor inicia
 lib/
   tvmaze.ts               cliente da TVmaze (somente backend)
   db.ts, watchlist.ts     conexão SQLite, criação, registros iniciais e consultas (somente backend)
@@ -394,5 +400,3 @@ verificado.
   mas a resposta HTTP da **página** é `200`, porque o carregamento (`loading.tsx`) começa a ser
   enviado antes de se saber que a série não existe. O Next.js adiciona `noindex` nesse caso. O
   **endpoint** `/api/shows/[id]` responde `404` corretamente.
-- O banco é criado no primeiro acesso a uma funcionalidade que o utiliza, e não no instante em
-  que o servidor inicia.

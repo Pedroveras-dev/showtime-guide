@@ -92,14 +92,19 @@ const CREATE_TABLE_SQL = `
  * O controle é feito por PRAGMA user_version, salvo dentro do próprio
  * arquivo do banco: se a lista for esvaziada depois, nada é reinserido.
  * Tudo roda numa transação: ou o banco fica completo, ou nada é gravado.
+ *
+ * A transação é IMMEDIATE (reserva o banco para escrita já no início) e a
+ * versão é conferida dentro dela. Assim, se o banco for aberto ao mesmo tempo
+ * por dois caminhos (a inicialização em instrumentation.ts e uma requisição),
+ * o segundo espera o primeiro terminar e encontra o banco já pronto.
  */
 function migrate(db: Database.Database): void {
-  const version = db.pragma("user_version", { simple: true });
-  if (version === SCHEMA_VERSION) {
-    return;
-  }
-
   db.transaction(() => {
+    const version = db.pragma("user_version", { simple: true });
+    if (version === SCHEMA_VERSION) {
+      return;
+    }
+
     db.exec(CREATE_TABLE_SQL);
 
     // Prepared statement com parâmetros nomeados (@show_id, @name, ...).
@@ -111,7 +116,7 @@ function migrate(db: Database.Database): void {
       insertSeed.run(item);
     }
     db.pragma(`user_version = ${SCHEMA_VERSION}`);
-  })();
+  }).immediate();
 }
 
 function openDatabase(): Database.Database {
