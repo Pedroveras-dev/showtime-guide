@@ -210,13 +210,9 @@ Os exemplos de resposta abaixo foram copiados de respostas reais da aplicação,
       "number": 157,
       "episode_name": "Capítulo 157",
       "runtime_minutes": 60,
-      "summary": null,
       "show": {
         "id": 92051,
         "name": "Quem Ama Cuida",
-        "image_url": "https://static.tvmaze.com/uploads/images/medium_portrait/626/1565297.jpg",
-        "genres": ["Drama", "Romance"],
-        "premiered": "2026-05-18",
         "network": "TV Globo"
       }
     }

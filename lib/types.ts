@@ -45,8 +45,8 @@ export type ScheduleItem = {
   number: number | null;
   episode_name: string;
   runtime_minutes: number | null;
-  summary: string | null;
-  show: ShowSummary & { network: string | null };
+  // Só o necessário para exibir a série e criar o link para o detalhe.
+  show: { id: number; name: string; network: string | null };
 };
 
 /** Resposta de GET /api/schedule: informa a data e o país efetivamente usados. */

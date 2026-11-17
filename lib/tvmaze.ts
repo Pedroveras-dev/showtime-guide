@@ -239,6 +239,7 @@ function toScheduleItem(raw: unknown): ScheduleItem | null {
 
   const runtime = toNumberOrNull(raw.runtime);
 
+  // Apenas os campos exibidos na página da programação.
   return {
     id: raw.id,
     airtime: toStringOrNull(raw.airtime),
@@ -246,9 +247,9 @@ function toScheduleItem(raw: unknown): ScheduleItem | null {
     number: toNumberOrNull(raw.number),
     episode_name: toStringOrNull(raw.name) ?? "Episódio sem título",
     runtime_minutes: runtime !== null && runtime > 0 ? runtime : null,
-    summary: stripHtml(toStringOrNull(raw.summary)),
     show: {
-      ...show,
+      id: show.id,
+      name: show.name,
       network: toNetworkName(raw.show.network, raw.show.webChannel),
     },
   };

@@ -113,6 +113,22 @@ describe("GET /api/schedule (programação)", () => {
     assert.ok(isRecord(response.body));
     assert.equal(response.body.date, "2024-02-29");
     assert.equal(response.body.country, "US");
+
+    // Cada item traz só os campos exibidos na página da programação.
+    const items = response.body.items;
+    assert.ok(Array.isArray(items) && items.length > 0);
+    const [first] = items;
+    assert.ok(isRecord(first) && isRecord(first.show));
+    assert.deepEqual(Object.keys(first).sort(), [
+      "airtime",
+      "episode_name",
+      "id",
+      "number",
+      "runtime_minutes",
+      "season",
+      "show",
+    ]);
+    assert.deepEqual(Object.keys(first.show).sort(), ["id", "name", "network"]);
   });
 
   test("400 para data fora do formato, data inexistente e país inválido", async () => {
